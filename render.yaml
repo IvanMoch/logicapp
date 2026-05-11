@@ -10,8 +10,8 @@ services:
     runtime: node
     plan: free
     rootDir: backend
-    buildCommand: npm install --include=dev && npx prisma generate && npm run build && npx prisma migrate deploy && npx ts-node --project tsconfig.seed.json prisma/seed.ts
-    startCommand: node dist/main
+    buildCommand: npm install --include=dev && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npx ts-node --project tsconfig.seed.json prisma/seed.ts && node dist/main
     envVars:
       - key: DATABASE_URL
         fromDatabase:

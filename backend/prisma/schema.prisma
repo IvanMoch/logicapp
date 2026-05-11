@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  id              String   @id @default(uuid())
+  sku             String   @unique
+  name            String
+  category        String
+  description     String?
+  minStockLevel   Int      @map("min_stock_level")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  batches         Batch[]
+  recommendations AlertRecommendation[]
+
+  @@map("products")
+}
+
+model Batch {
+  id               String          @id @default(uuid())
+  productId        String          @map("product_id")
+  product          Product         @relation(fields: [productId], references: [id])
+  batchCode        String          @unique @map("batch_code")
+  expirationDate   DateTime        @map("expiration_date")
+  initialQuantity  Int             @map("initial_quantity")
+  currentQuantity  Int             @map("current_quantity")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+  locations        BatchLocation[]
+  movementDetails  MovementDetail[]
+  recommendations  AlertRecommendation[]
+
+  @@map("batches")
+}
+
+model Location {
+  id          String          @id @default(uuid())
+  zone        String          // e.g., 'Calle A'
+  block       String          // e.g., 'Bloque B'
+  level       String          // e.g., 'Piso 2'
+  capacity    Int?
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  batches     BatchLocation[]
+
+  @@unique([zone, block, level])
+  @@map("locations")
+}
+
+model BatchLocation {
+  id          String   @id @default(uuid())
+  batchId     String   @map("batch_id")
+  batch       Batch    @relation(fields: [batchId], references: [id])
+  locationId  String   @map("location_id")
+  location    Location @relation(fields: [locationId], references: [id])
+  quantity    Int
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([batchId, locationId])
+  @@map("batch_locations")
+}
+
+enum MovementType {
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+model Movement {
+  id           String           @id @default(uuid())
+  type         MovementType
+  date         DateTime         @default(now())
+  userId       String?          @map("user_id") // Optional for now, until Auth is added
+  referenceDoc String?          @map("reference_doc")
+  pdfUrl       String?          @map("pdf_url")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  details      MovementDetail[]
+
+  @@map("movements")
+}
+
+model MovementDetail {
+  id          String    @id @default(uuid())
+  movementId  String    @map("movement_id")
+  movement    Movement  @relation(fields: [movementId], references: [id])
+  batchId     String    @map("batch_id")
+  batch       Batch     @relation(fields: [batchId], references: [id])
+  quantity    Int
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("movement_details")
+}
+
+enum AlertRecommendationType {
+  EXPIRATION
+  LOW_STOCK
+}
+
+model AlertRecommendation {
+  id                      String   @id @default(uuid())
+  alertKey                String   @unique @map("alert_key")
+  alertType               AlertRecommendationType @map("alert_type")
+  contextSignature        String   @map("context_signature")
+  batchId                 String?  @map("batch_id")
+  batch                   Batch?   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  productId               String?  @map("product_id")
+  product                 Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  accionInmediata         String   @map("accion_inmediata")
+  canalSugerido           String   @map("canal_sugerido")
+  descuentoPct            Int      @map("descuento_pct")
+  clienteObjetivo         String   @map("cliente_objetivo")
+  justificacionEstacional String   @map("justificacion_estacional")
+  generatedAt             DateTime @default(now()) @map("generated_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@map("alert_recommendations")
+}

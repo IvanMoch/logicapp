@@ -38,7 +38,7 @@ type AlertInput =
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private readonly client: GoogleGenAI | null;
-  private readonly model = 'gemini-2.5-flash';
+  private readonly model = 'gemini-2.0-flash';
 
   constructor(
     private prisma: PrismaService,
@@ -256,8 +256,8 @@ Responde ÚNICAMENTE con el array JSON válido. Sin markdown, sin texto introduc
       const json = JSON.parse(text);
       if (!Array.isArray(json)) return result;
       parsed = json;
-    } catch (err) {
-      this.logger.error('Error al generar recomendaciones IA', err as any);
+    } catch (err: any) {
+      this.logger.error(`Error al generar recomendaciones IA: ${err?.message ?? err}`, err?.stack);
       return result;
     }
 
